@@ -85,13 +85,12 @@ extension AVPlayerWrapper {
         }
         
         
-        // https://stackoverflow.com/questions/79679383/unmanaged-object-pointer-build-issues-in-xcode-26-beta
-        // XCode 26 sdk change
-        var tapRef: MTAudioProcessingTap?
+        // Newer SDKs expose the out parameter as an unmanaged Core Foundation object pointer.
+        var tapRef: Unmanaged<MTAudioProcessingTap>?
         let error = MTAudioProcessingTapCreate(kCFAllocatorDefault, &callbacks, kMTAudioProcessingTapCreationFlag_PreEffects, &tapRef)
         assert(error == noErr)
-        
-        params.audioTapProcessor = tapRef
+
+        params.audioTapProcessor = tapRef?.takeRetainedValue()
         
         audioMix.inputParameters = [params]
         item.audioMix = audioMix

@@ -203,10 +203,7 @@ class MusicService : HeadlessJsMediaService() {
             onMediaKeyEvent(intent)
         }
         // HACK: Why is onPlay triggering onStartCommand??
-        if (!commandStarted) {
-            commandStarted = true
-            super.onStartCommand(intent, flags, startId)
-        }
+        super.onStartCommand(intent, flags, startId)
         return START_STICKY
     }
 
@@ -694,6 +691,8 @@ class MusicService : HeadlessJsMediaService() {
 
         scope.launch {
             event.onPlayerActionTriggeredExternally.collect {
+                if (!this@MusicService::player.isInitialized) return@collect
+
                 when (it) {
                     is MediaSessionCallback.RATING -> {
                         Bundle().apply {
@@ -702,31 +701,22 @@ class MusicService : HeadlessJsMediaService() {
                         }
                     }
                     is MediaSessionCallback.SEEK -> {
-                        Bundle().apply {
-                            putDouble("position", it.positionMs.toSeconds())
-                            emit(MusicEvents.BUTTON_SEEK_TO, this)
-                        }
+                        player.seek(it.positionMs, TimeUnit.MILLISECONDS)
                     }
-                    MediaSessionCallback.PLAY -> emit(MusicEvents.BUTTON_PLAY)
-                    MediaSessionCallback.PAUSE -> emit(MusicEvents.BUTTON_PAUSE)
-                    MediaSessionCallback.NEXT -> emit(MusicEvents.BUTTON_SKIP_NEXT)
-                    MediaSessionCallback.PREVIOUS -> emit(MusicEvents.BUTTON_SKIP_PREVIOUS)
-                    MediaSessionCallback.STOP -> emit(MusicEvents.BUTTON_STOP)
+                    MediaSessionCallback.PLAY -> player.play()
+                    MediaSessionCallback.PAUSE -> player.pause()
+                    MediaSessionCallback.NEXT -> player.next()
+                    MediaSessionCallback.PREVIOUS -> player.previous()
+                    MediaSessionCallback.STOP -> player.stop()
                     MediaSessionCallback.FORWARD -> {
-                        Bundle().apply {
-                            val interval = latestOptions?.getDouble(FORWARD_JUMP_INTERVAL_KEY, DEFAULT_JUMP_INTERVAL) ?:
+                        val interval = latestOptions?.getDouble(FORWARD_JUMP_INTERVAL_KEY, DEFAULT_JUMP_INTERVAL) ?:
                             DEFAULT_JUMP_INTERVAL
-                            putInt("interval", interval.toInt())
-                            emit(MusicEvents.BUTTON_JUMP_FORWARD, this)
-                        }
+                        player.seekBy(interval.toLong(), TimeUnit.SECONDS)
                     }
                     MediaSessionCallback.REWIND -> {
-                        Bundle().apply {
-                            val interval = latestOptions?.getDouble(BACKWARD_JUMP_INTERVAL_KEY, DEFAULT_JUMP_INTERVAL) ?:
+                        val interval = latestOptions?.getDouble(BACKWARD_JUMP_INTERVAL_KEY, DEFAULT_JUMP_INTERVAL) ?:
                             DEFAULT_JUMP_INTERVAL
-                            putInt("interval", interval.toInt())
-                            emit(MusicEvents.BUTTON_JUMP_BACKWARD, this)
-                        }
+                        player.seekBy(-interval.toLong(), TimeUnit.SECONDS)
                     }
 
                     is MediaSessionCallback.CUSTOMACTION -> {
@@ -1255,4 +1245,3 @@ class MusicService : HeadlessJsMediaService() {
         const val DEFAULT_STOP_FOREGROUND_GRACE_PERIOD = 5
     }
 }
-
