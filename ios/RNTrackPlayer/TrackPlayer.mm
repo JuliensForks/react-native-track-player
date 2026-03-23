@@ -36,17 +36,25 @@ RCT_EXPORT_MODULE()
     return [RNTrackPlayer supportedEvents];
 }
 
+#if RCT_NEW_ARCH_ENABLED
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const facebook::react::ObjCTurboModule::InitParams &)params {
     return std::make_shared<facebook::react::NativeTrackPlayerSpecJSI>(params);
 }
+- (nonnull facebook::react::ModuleConstants<JS::NativeTrackPlayer::Constants::Builder>)constantsToExport {
+    return [RNTrackPlayer constantsToExport];
+}
+
+- (nonnull facebook::react::ModuleConstants<JS::NativeTrackPlayer::Constants::Builder>)getConstants { 
+    return [self constantsToExport];
+}
+#else
+- (NSDictionary *)constantsToExport {
+    return [RNTrackPlayer constantsToExport];
+}
+#endif
 
 - (void)add:(nonnull NSArray *)tracks insertBeforeIndex:(double)insertBeforeIndex resolve:(nonnull RCTPromiseResolveBlock)resolve reject:(nonnull RCTPromiseRejectBlock)reject {
     [trackPlayer add:tracks before:insertBeforeIndex resolver:resolve rejecter:reject];
-}
-
-
-- (nonnull facebook::react::ModuleConstants<JS::NativeTrackPlayer::Constants::Builder>)constantsToExport {
-    return [RNTrackPlayer constantsToExport];
 }
 
 - (void)getActiveTrack:(nonnull RCTPromiseResolveBlock)resolve reject:(nonnull RCTPromiseRejectBlock)reject { 
@@ -55,10 +63,6 @@ RCT_EXPORT_MODULE()
 
 - (void)getActiveTrackIndex:(nonnull RCTPromiseResolveBlock)resolve reject:(nonnull RCTPromiseRejectBlock)reject { 
     [trackPlayer getActiveTrackIndex:resolve rejecter:reject];
-}
-
-- (nonnull facebook::react::ModuleConstants<JS::NativeTrackPlayer::Constants::Builder>)getConstants { 
-    return [self constantsToExport];
 }
 
 - (void)getPlayWhenReady:(nonnull RCTPromiseResolveBlock)resolve reject:(nonnull RCTPromiseRejectBlock)reject { 
