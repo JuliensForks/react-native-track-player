@@ -84,13 +84,30 @@ extension AVPlayerWrapper {
             audioTap.process(numberOfFrames: numberFrames, buffer: UnsafeMutableAudioBufferListPointer(bufferListInOut))
         }
         
-        
-        // Newer SDKs expose the out parameter as an unmanaged Core Foundation object pointer.
+        #if compiler(>=6.2)
+        var tapRef: MTAudioProcessingTap?
+        let error = MTAudioProcessingTapCreate(
+            kCFAllocatorDefault,
+            &callbacks,
+            kMTAudioProcessingTapCreationFlag_PreEffects,
+            &tapRef
+        )
+        assert(error == noErr)
+
+        params.audioTapProcessor = tapRef
+        #else
+        // Older SDKs expose the out parameter as an unmanaged Core Foundation object pointer.
         var tapRef: Unmanaged<MTAudioProcessingTap>?
-        let error = MTAudioProcessingTapCreate(kCFAllocatorDefault, &callbacks, kMTAudioProcessingTapCreationFlag_PreEffects, &tapRef)
+        let error = MTAudioProcessingTapCreate(
+            kCFAllocatorDefault,
+            &callbacks,
+            kMTAudioProcessingTapCreationFlag_PreEffects,
+            &tapRef
+        )
         assert(error == noErr)
 
         params.audioTapProcessor = tapRef?.takeRetainedValue()
+        #endif
         
         audioMix.inputParameters = [params]
         item.audioMix = audioMix
