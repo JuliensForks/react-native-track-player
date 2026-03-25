@@ -13,7 +13,7 @@
     RNTrackPlayer *trackPlayer;
 }
 
-RCT_EXPORT_MODULE()
+RCT_EXPORT_MODULE(TrackPlayer)
 
 - (instancetype)init {
     self = [super init];
